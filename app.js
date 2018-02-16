@@ -1,11 +1,25 @@
 // REQUIRES, basicamente es una importacion de LIBRERIAS que usamos para que funcione algo especifico
 var express = require('express');
 var mongoose = require('mongoose');
-
+var bodyParser = require('body-parser');
 
 // INICIALIZAR VARIABLES, aca es donde se usaran las LIBRERIAS
 var app = express();
 
+// BODY PARSER ================================
+//
+// Estas son funciones middleware, que se van a ejecutar SIEMPRE, cuando el codigo o una peticion entre
+//
+// parse application/x-www-form-urlencoded
+app.use(bodyParser.urlencoded({ extended: false }));// si hay un objeto el bodyparses lo tomara y hara un objeto json
+// parse application/json
+app.use(bodyParser.json());
+//=============================================
+
+// IMPORTAR RUTAS
+var appRoutes = require('./routes/app');
+var usuarioRoutes = require('./routes/usuario');
+var loginRoutes = require('./routes/login');
 
 // CONEXION A LA BD
 mongoose.connection.openUri('mongodb://localhost:27017/hospitalDB', ( err, resp ) => { // aca se define el path a la bd
@@ -16,20 +30,10 @@ mongoose.connection.openUri('mongodb://localhost:27017/hospitalDB', ( err, resp 
 
 }); 
 
-
-// RUTAS;
-app.get('/', (req, res, next) => { // tiene 3 parametros; 1) el request y 2) el parametro y 3) el callback(es una funcion)
-
-    res.status(200).json({ //aca el 200 es el codigo de peticion http
-        ok: true,
-        mensaje: 'Peticion realizada correctamente'
-    });
-} ); 
-
-// -req(request) es la peticion al servidor
-// -rest(response) es la respuesta que entrega el servidor
-// -next le dice a node que cuando se ejecute siga ocn la siguiente instruccion
-
+// RUTAS;  middleware: es algo que se ejecuta antes de las rutas
+app.use('/usuario', usuarioRoutes);
+app.use('/login', loginRoutes);
+app.use('/', appRoutes);
 
 
 // ESCUCHAR PETICIONES
