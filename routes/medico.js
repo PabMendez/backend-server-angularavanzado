@@ -1,15 +1,13 @@
 var express = require('express');
 var app = express();
-var bcrypt = require('bcryptjs');
-var jwt = require('jsonwebtoken');
 
 var mdAutentication = require('../middlewares/autenticacion');
 
-var Usuario = require('../models/usuario');
+var Medico = require('../models/medico');
 // var SEED = require('../config/config').SEED;
 
 // ===========================================================
-// Obtener todos los usuarios
+// Obtener todos los medicos
 // ===========================================================
 app.get('/', (req, res, next) => {
 
@@ -17,113 +15,110 @@ app.get('/', (req, res, next) => {
     // se supone que viene desde la query, pero si no es mejor dejarlo definido de antemano
     desde = Number(desde);
 
-    Usuario.find({}, 'nombre email img role')
+    Medico.find({})
         .skip(desde)
         .limit(5)
+        .populate('usuario', 'nombre email')
+        .populate('hospital')
         .exec(
-            (err, usuarios)=>{
+            (err, medicos)=>{
 
             if (err) {
                 return res.status(500).json({
                     ok: false,
-                    mensaje: 'Error cargando usuario',
+                    mensaje: 'Error cargando medico',
                     errors: err
                 });
             }
-
-            Usuario.count({}, (err, conteo)=>{
-
+            Medico.count({}, (err, conteo)=>{
                 res.status(200).json({
                     ok: true,
-                    usuarios: usuarios,
+                    medicos: medicos,
                     total: conteo
                 });
             });
-
         });
 } ); 
 
 
 
 // ===========================================================
-// Actualizar un usuario
+// Actualizar un medico
 // ===========================================================
 app.put('/:id', mdAutentication.verificaToken, (req, res) => {
 
     var id = req.params.id;
     var body = req.body;
 
-    Usuario.findById( id, (err, usuario) => {// aca el parametro 'usuario' es el RESPONSE DE LA PETICION, por lo tanto contiene todos los campos de usuario
+    Medico.findById( id, (err, medico) => {// aca el parametro 'medico' es el RESPONSE DE LA PETICION, por lo tanto contiene todos los campos de usuario
         
         if (err) {
             return res.status(500).json({
                 ok: false,
-                mensaje: 'Error al buscar usuario',
+                mensaje: 'Error al buscar medico',
                 errors: err
             });
         }
         
-        if( !usuario ) {
+        if( !medico ) {
             return res.status(400).json({
                 ok: false,
-                mensaje: 'El usuario con el id ' + id + ' no existe',
-                errors: { message: 'No existe un usuario con ese ID' }
+                mensaje: 'El medico con el id ' + id + ' no existe',
+                errors: { message: 'No existe un medico con ese ID' }
             });
         }
 
-        usuario.nombre = body.nombre;
-        usuario.email = body.email;
-        usuario.role = body.role;
+        medico.nombre = body.nombre;
+        medico.usuario = req.usuario._id;
+        medico.hospital = body.hospital;// el hospital tambien tiene que venir en el body, porque puede ser que la persona lo seleccione de alguna opcion
+                                        // esto lo estamos recibiendo de la peticion post o put que se hará desde Angular
+                                        // en MI FRONT END yo tengo que mandar la variable hospital, pero va a ser solamente la ID que yo seleccione
 
-        usuario.save( ( err, usuarioGuardado ) =>{
+        medico.save( ( err, medicoGuardado ) =>{
 
             if (err) {
                 return res.status(400).json({
                     ok: false,
-                    mensaje: 'Error al actualizar usuario',
+                    mensaje: 'Error al actualizar medico',
                     errors: err
                 });
             }
 
-            usuarioGuardado.password = ':)';
-
             res.status(200).json({ 
                 ok: true,
-                usuario: usuarioGuardado
+                medico: medicoGuardado
             });
         } );
     } );
 });
 
 // ===========================================================
-// Crear un nuevo usuario
+// Crear un nuevo medico
 // ===========================================================
 app.post('/', mdAutentication.verificaToken, (req, res) => {
 
     var body = req.body;
 
-    var usuario = new Usuario({
+    var medico = new Medico({
         nombre: body.nombre,
-        email: body.email,
-        password: bcrypt.hashSync( body.password, 10 ),
-        img: body.img,
-        role: body.role
+        usuario: req.usuario._id,
+        hospital: body.hospital
     });
 
-    usuario.save( ( err, usuarioGuardado ) =>{
+    medico.save( ( err, medicoGuardado ) =>{
 
         if (err) {
             return res.status(400).json({
                 ok: false,
-                mensaje: 'Error al crear usuario',
+                mensaje: 'Error al crear medico',
                 errors: err
             });
         }
 
         res.status(201).json({ // 201 = recurso creado
             ok: true,
-            usuario: usuarioGuardado,
-            usuarioToken: req.usuario
+            medico: medicoGuardado,
+            medicoToken: req.medico
         });
     } );
     
@@ -131,36 +126,36 @@ app.post('/', mdAutentication.verificaToken, (req, res) => {
 
 
 // ===========================================================
-// Borrar un usuario por su ID
+// Borrar un medico por su ID
 // ===========================================================
 app.delete('/:id', mdAutentication.verificaToken, ( req, res ) => {
 
     // primer obtener la id
     var id = req.params.id;
 
-    // se hace referencia al esquema de Usuario y gracias a los metodos de mongoose se busca por id y se remueve
+    // se hace referencia al esquema de medico y gracias a los metodos de mongoose se busca por id y se remueve
     // todos los metodos de mongoose tienen un callback
-    Usuario.findByIdAndRemove(id, ( err, usuarioBorrado ) => {
+    Medico.findByIdAndRemove(id, ( err, medicoBorrado ) => {
 
         if (err) {
             return res.status(500).json({
                 ok: false,
-                mensaje: 'Error al borrar usuario',
+                mensaje: 'Error al borrar medico',
                 errors: err
             });
         }
 
-        if (!usuarioBorrado) {
+        if (!medicoBorrado) {
             return res.status(400).json({
                 ok: false,
-                mensaje: 'El usuario con esa ID no existe',
-                errors: { message: 'El usuario con esa ID no existe' }
+                mensaje: 'El medico con esa ID no existe',
+                errors: { message: 'El medico con esa ID no existe' }
             });
         }
 
         res.status(200).json({
             ok: true,
-            usuario: usuarioBorrado
+            medico: medicoBorrado
         });
 
     });

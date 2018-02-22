@@ -19,7 +19,12 @@ app.use(bodyParser.json());
 // IMPORTAR RUTAS
 var appRoutes = require('./routes/app');
 var usuarioRoutes = require('./routes/usuario');
+var hospitalRoutes = require('./routes/hospital');
+var medicoRoutes = require('./routes/medico');
+var busquedaRoutes = require('./routes/busqueda');
 var loginRoutes = require('./routes/login');
+var uploadRoutes = require('./routes/upload');
+var imagenesRoutes = require('./routes/imagenes');
 
 // CONEXION A LA BD
 mongoose.connection.openUri('mongodb://localhost:27017/hospitalDB', ( err, resp ) => { // aca se define el path a la bd
@@ -30,9 +35,20 @@ mongoose.connection.openUri('mongodb://localhost:27017/hospitalDB', ( err, resp 
 
 }); 
 
+// SERVER INDEX CONFIG
+// var serveIndex = require('serve-index');
+// app.use(express.static(__dirname + '/'))
+// app.use('/uploads', serveIndex(__dirname + '/uploads'));
+
 // RUTAS;  middleware: es algo que se ejecuta antes de las rutas
 app.use('/usuario', usuarioRoutes);
+app.use('/hospital', hospitalRoutes);
+app.use('/medico', medicoRoutes);
+app.use('/busqueda', busquedaRoutes);
 app.use('/login', loginRoutes);
+app.use('/upload', uploadRoutes);
+app.use('/img', imagenesRoutes);
+
 app.use('/', appRoutes);
 
 

@@ -5,6 +5,7 @@ var jwt = require('jsonwebtoken');
 
 var app = express();
 var Usuario = require('../models/usuario');
+var Hospital = require('../models/hospital');
 var SEED = require('../config/config').SEED;
 
 app.post('/', (req, res) => {
